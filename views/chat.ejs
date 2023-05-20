@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+
+    <title>Chat App</title>
+</head>
+
+<body class="bg-light">
+    <div class="container py-5">
+        <h1 class="text-center mb-5">모든 연결사용자간 채팅</h1>
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="chatForm">
+                            <div class="form-group">
+                                <label for="nickname">채팅 닉네임:</label>
+                                <input type="text" class="form-control" id="nickname" placeholder="닉네임을 입력하세요">
+                            </div>
+                            <div class="form-group">
+                                <label for="message">전송 메시지:</label>
+                                <input type="text" class="form-control" id="message" placeholder="메시지를 입력하세요">
+                            </div>
+                            <input type="button" id="btnSend" value="전송"><br>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <ul id="chatHistory" class="list-group mt-5">
+        </ul>
+    </div>
+
+    <!-- jquery cdn 라이브러리 참조 -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- socket.io javascript library 참조 -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- chat script here -->
+    <script>
+        //클라이언트(웹브라우저) 서버 연결 소켓 객체 정의 - 백엔드 socket.js 서버 모듈과 연결한다. 
+        var socket = io.connect('/');
+
+        //전송버튼 클릭시 사용자 입력메시지를 서버에 특정 이벤트 기능으로 전송한다.
+        $("#btnSend").click(function () {
+
+            // 메시지 입력박스에서 사용자가 입력한 메시지를 추출한다. 
+            var msg = $("#message").val();
+
+            // 대화명 입력박스에서 대화명을 추출한다. 
+            var nickName = $("#nickname").val();
+
+            // 서버 socket.js에 보낼 기본 메시지 데이터 정의
+            var sendMsg = `${nickName}:${msg}`;
+
+            // JSON 데이터(문자열) 형식으로 데이터를 보다 한방에 많이 보낼 수 있다. 
+            var jsonData = {
+                "nickName": nickName,
+                "msg": msg,
+                "etc": "기타데이터"
+            };
+            socket.emit("broadcast3", nickName, msg, "샘플데이터");
+        });
+
+        // 클라이언트 이벤트 수신기 기능정의 - receiveAll
+        socket.on("receiveAll", function (receiveMsg) {
+            console.log("메시지 수신기-데이터", "receiveAll", receiveMsg);
+            $("#chatHistory").append(`<li>${receiveMsg}</li>`);
+        });
+
+
+
+        socket.on("receiveData", function (receiveMsg) {
+            console.log("메시지 수신기-데이터", "receiveData", receiveMsg);
+            $("#chatHistory").append(`<li>${receiveMsg}</li>`);
+        });
+
+
+        socket.on("sampleEvent", function (data1, data2, data3) {
+            console.log("메시지 수신기-데이터", "sampleEvent", data1, data2, data3);
+            var msg = `${data1}님이 <${data2}>란 메시지를 보냈어요.`;
+            $("#chatHistory").append(`<li>${msg}</li>`);
+        });
+    </script>
+
+</body>
+
+</html>

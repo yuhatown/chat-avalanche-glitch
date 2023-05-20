@@ -1,0 +1,104 @@
+<html>
+
+<body>
+    <h1>그룹 채팅</h1>
+
+    채팅방이름: <input type="text" id="room" value="channel1" />
+    <input type="button" id="btnJoin" value="채팅방 입장" /><br>
+
+    채팅 닉네임:<input type="text" id="nickname" value="창훈"><br>
+    전송 메시지:<input type="text" id="message" value=""><br>
+    <input type="button" id="btnSend" value="전송"><br>
+
+    <hr>
+    <ul id="chatHistory">
+    </ul>
+
+    <!-- jquery cdn 라이브러리 참조 -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- socket.io javascript library 참조 -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+
+        //클라이언트(웹브라우저) 서버 연결 소켓 객체 정의 - 백엔드 socket.js 서버 모듈과 연결한다. 
+        var socket = io.connect('/');
+
+
+        // 채팅방 입장버튼 클릭시 입장처리
+        $("#btnJoin").click(function () {
+
+            // 채팅방 이름 가져오기
+            var roomId = $("#room").val();
+
+            // 대화명 가져오기
+            var nickName = $("#nickname").val();
+
+            // 서버 채팅방 입장 이벤트 수신기 호출하기
+            // socket.emit('서버소켓이벤트수신기명', 전달데이터...)
+            socket.emit("entry", roomId, nickName);
+
+        })
+
+        //전송버튼 클릭시 사용자 입력메시지를 서버에 특정 이벤트 기능으로 전송한다.
+        $("#btnSend").click(function () {
+
+            // 채팅방 이름가져오기
+            var channelId = $("#room").val();
+
+            // 메시지 입력박스에서 사용자가 입력한 메시지를 추출한다. 
+            var msg = $("#message").val();
+
+            // 대화명 입력박스에서 대화명을 추출한다. 
+            var nickName = $("#nickname").val();
+
+            // 그룹채팅 전용 메시지 서버 수신기 호출하기
+            socket.emit('groupMsg', channelId, nickName, msg);
+
+        });
+
+
+        // 클라이언트 이벤트 수신기 기능정의 - receiveAll
+        socket.on("receiveAll", function (receiveMsg) {
+
+            console.log("메시지 수신기-데이터", "receiveAll", receiveMsg);
+
+            $("#chatHistory").append(`<li>${receiveMsg}</li>`);
+        });
+
+        socket.on("receiveData", function (receiveMsg) {
+
+            console.log("메시지 수신기-데이터", "receiveData", receiveMsg);
+
+            $("#chatHistory").append(`<li>${receiveMsg}</li>`);
+        });
+
+        socket.on("sampleEvent", function (data1, data2, data3) {
+
+            console.log("메시지 수신기-데이터", "sampleEvent", data1, data2, data3);
+
+            var msg = `${data1}님이 <${data2}>란 메시지를 보냈어요.`;
+
+            $("#chatHistory").append(`<li>${msg}</li>`);
+        });
+
+
+        // 채팅별 입장완료 메시지 수신기 정의 및 기능구현
+        socket.on("entryok", function (entryMsg) {
+
+            $("#chatHistory").append(`<li>${entryMsg}</li>`);
+        });
+
+        // 그룹 메시지 전용 이벤트 수신기 정의 및 구현
+        socket.on("getGroupMsg", function (channelId, nickName, msg) {
+            $("#chatHistory").append(`<li>${msg}</li>`);
+        });
+
+
+
+    </script>
+
+</body>
+
+</html>
